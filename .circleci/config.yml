@@ -1,0 +1,75 @@
+version: 2
+jobs:
+  dockerbuild:
+    machine:
+      image: circleci/classic:201808-01
+    steps:
+      - checkout
+      - run:
+          name: "Switch to Python v3.7"
+          command: |
+            pyenv versions
+            pyenv global 3.7.0
+      - run:
+          name: install aws
+          command: |
+            python --version
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip awscliv2.zip
+            sudo ./aws/install --bin-dir /usr/local/bin --install-dir /usr/local/aws-cli --update
+      - run:
+          name: "export env var."
+          command: |
+            export AWS_ACCESS_KEY_ID="ASIA2DYVJGKZWUBTOE7B"
+            export AWS_SECRET_ACCESS_KEY="qIgi8anT6NsvkJukVx0pOLuQtUa6zWdjkkv3PWR3"
+            export AWS_SESSION_TOKEN="IQoJb3JpZ2luX2VjEFAaCXVzLWVhc3QtMSJHMEUCIHQ5DoDgkl1JM+GzT4xfvXbmhXMjH1GJmF149eepyLZgAiEA+gZvHgWITFGQfRGzBaGUQRZY9NpWiDZg7hkFUpjpPYAqjAMIqf//////////ARADGgw2OTUyOTI0NzQwMzUiDEojTTTFl+U367CwSirgAulti5k986v1VkeuEKDVhmliIz0d3UUjwTAOXTM2VoTvydmblbH6SiVbihDsY7fRu9ohjad3tlQxajVvGddcudHHkH4j1gYQkbhhcWa8jWX/UBdzQFkuoeN45NUuFsBENYgNItGlnS59oOblGybinpTZOl3mPyNznkG8bsM1TNTNRoViWibMaHdQ0qLncTx9bbH+EDF1MTsUZ66sC+ACymwZ+0hqHiQGc4m8w+WjcU7BrGC0xvPVXk2XQUOroDQ7v/7QyIlyG6toJG5e0gIOS/ax7T4ktr/2eLiSBAv5KDkyielH5QR7BgOv66s8xVsP7nGRbuH64oUKxDKKmfWWPHLIUsu1X9VH4XMqoiEqQR4aHL8/jZhQVpDQSnhvVSQusr8K3pA/PuevA23xjRP1GxSFEVPbHmnD60UGTSgnllSxP0ga1cqhvXE760RVJo1sFgcugTFBQCPnzOoPMc03sqMwqvvjkAY6pgElLQ9KyzMj+HHgOM1kRRV5dt3P2MWk45Y91TeMOdtp0tK3C9C1kkLSKRSKCzlK5at9lsJMX1R5ClWkdE1Cm3QdnXisQ1Xks5wAeLhsOfngJhWa0GaZUR/DA+wP1t6n40h5K8Uf29bfnH/pngZq3Fn0XEwSUuZJLgR4qpNCa0wFI2xXSTogA34HwyxT99EB4NnGcwrmhpwxnQcgZ0acTDkXIzugWdOb"
+            aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 695292474035.dkr.ecr.us-east-1.amazonaws.com
+      - run:
+          name: Build and push Docker image
+          command: |
+            sha=$CIRCLE_SHA1
+            TAG=latest
+            docker build -t $AWS_ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/mclouds-prod-ecr:latest .
+            docker push $AWS_ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/mclouds-prod-ecr:$TAG
+  deployecs:
+    machine: 
+      image: circleci/classic:201808-01
+    steps:
+      - run:
+          name: "Switch to Python v3.7"
+          command: |
+            pyenv versions
+            pyenv global 3.7.0      
+      - run:
+          name: install aws & ecs-deploy
+          command: |
+            python --version
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip awscliv2.zip
+            sudo ./aws/install --bin-dir /usr/local/bin --install-dir /usr/local/aws-cli --update      
+            sudo wget "https://raw.githubusercontent.com/silinternational/ecs-deploy/develop/ecs-deploy" -O /usr/local/bin/ecs-deploy
+            sudo chmod +x /usr/local/bin/ecs-deploy
+      - run:
+          name: deploying to ECS
+          command: |
+            sha=$CIRCLE_SHA1
+            TAG=latest
+            export AWS_ACCESS_KEY_ID="ASIA2DYVJGKZWUBTOE7B"
+            export AWS_SECRET_ACCESS_KEY="qIgi8anT6NsvkJukVx0pOLuQtUa6zWdjkkv3PWR3"
+            export AWS_SESSION_TOKEN="IQoJb3JpZ2luX2VjEFAaCXVzLWVhc3QtMSJHMEUCIHQ5DoDgkl1JM+GzT4xfvXbmhXMjH1GJmF149eepyLZgAiEA+gZvHgWITFGQfRGzBaGUQRZY9NpWiDZg7hkFUpjpPYAqjAMIqf//////////ARADGgw2OTUyOTI0NzQwMzUiDEojTTTFl+U367CwSirgAulti5k986v1VkeuEKDVhmliIz0d3UUjwTAOXTM2VoTvydmblbH6SiVbihDsY7fRu9ohjad3tlQxajVvGddcudHHkH4j1gYQkbhhcWa8jWX/UBdzQFkuoeN45NUuFsBENYgNItGlnS59oOblGybinpTZOl3mPyNznkG8bsM1TNTNRoViWibMaHdQ0qLncTx9bbH+EDF1MTsUZ66sC+ACymwZ+0hqHiQGc4m8w+WjcU7BrGC0xvPVXk2XQUOroDQ7v/7QyIlyG6toJG5e0gIOS/ax7T4ktr/2eLiSBAv5KDkyielH5QR7BgOv66s8xVsP7nGRbuH64oUKxDKKmfWWPHLIUsu1X9VH4XMqoiEqQR4aHL8/jZhQVpDQSnhvVSQusr8K3pA/PuevA23xjRP1GxSFEVPbHmnD60UGTSgnllSxP0ga1cqhvXE760RVJo1sFgcugTFBQCPnzOoPMc03sqMwqvvjkAY6pgElLQ9KyzMj+HHgOM1kRRV5dt3P2MWk45Y91TeMOdtp0tK3C9C1kkLSKRSKCzlK5at9lsJMX1R5ClWkdE1Cm3QdnXisQ1Xks5wAeLhsOfngJhWa0GaZUR/DA+wP1t6n40h5K8Uf29bfnH/pngZq3Fn0XEwSUuZJLgR4qpNCa0wFI2xXSTogA34HwyxT99EB4NnGcwrmhpwxnQcgZ0acTDkXIzugWdOb"
+            echo "ecs-deploy --region $REGION --cluster $CLUSTER --service-name $SERVICE --image $AWS_ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/chat-demo:$TAG --timeout 1800"
+            ecs-deploy --region $REGION --cluster $CLUSTER --service-name $SERVICE --image $AWS_ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/mclouds-prod-ecr:$TAG --timeout 1800
+workflows:
+  version: 2
+  buil&push:
+    jobs:
+      - dockerbuild:
+          filters:
+            branches:
+              only: master
+      - deployecs:
+          requires:
+            - dockerbuild
+          filters:
+            branches:
+              only: master
