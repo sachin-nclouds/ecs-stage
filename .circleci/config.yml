@@ -35,15 +35,11 @@ jobs:
   configure-role-arn:
     executor: aws-cli/default
     steps:
-      - checkout
-      - aws-cli/setup:
-          profile-name: default
       - aws-cli/role-arn-setup:
-          profile-name: default
+          profile-name: sachin
           role-arn: 'arn:aws:sts::695292474035:assumed-role/AWSReservedSSO_nclouds-devops_7a27a6c6e0019cb2/sachin@nclouds.com'
           source-profile: default
-      - run: >-
-          aws sts assume-role --role-arn "arn:aws:sts::695292474035:assumed-role/AWSReservedSSO_nclouds-devops_7a27a6c6e0019cb2/sachin@nclouds.com" --role-session-name AWSCLI-Session
+      - run: aws sts assume-role --role-arn "arn:aws:sts::695292474035:assumed-role/AWSReservedSSO_nclouds-devops_7a27a6c6e0019cb2/sachin@nclouds.com" --role-session-name AWSCLI-Session
 workflows:
   aws-cli:
     jobs:
