@@ -33,7 +33,8 @@ orbs:
   aws-cli: circleci/aws-cli@2.0
 jobs:
   configure-role-arn:
-    executor: aws-cli/default
+    docker:
+      - image: cimg/base:stable
     steps:
       - aws-cli/role-arn-setup:
           profile-name: sachin
