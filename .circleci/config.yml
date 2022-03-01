@@ -5,12 +5,6 @@ workflows:
     build_and_push_image:
         jobs:
             - aws-ecr/build-and-push-image:
-                account-url: $AWS_ECR_ACCOUNT_URL
-                aws-access-key-id: $access_key
-                aws-secret-access-key: $secret_access_key
-                context: myContext
-                create-repo: true
                 profile-name: sachin
-                region: AWS_REGION_ENV_VAR_NAME
                 repo: $repo
                 tag: $tag
