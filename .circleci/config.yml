@@ -1,4 +1,6 @@
 version: 2
+orbs:
+  aws-cli: circleci/aws-cli@2.0.3
 jobs:
   dockerbuild:
     machine:
@@ -10,13 +12,7 @@ jobs:
           command: |
             pyenv versions
             pyenv global 3.7.0
-      - run:
-          name: install aws
-          command: |
-            python --version
-            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-            unzip awscliv2.zip
-            sudo ./aws/install --bin-dir /usr/local/bin --install-dir /usr/local/aws-cli --update
+      - aws-cli/install
       - run:
           name: "export env var."
           command: |
