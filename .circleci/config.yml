@@ -5,6 +5,5 @@ workflows:
     build_and_push_image:
         jobs:
             - aws-ecr/build-and-push-image:
-                profile-name: sachin
                 repo: $repo
                 tag: $tag
