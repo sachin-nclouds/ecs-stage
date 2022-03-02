@@ -1,52 +1,27 @@
-#version: "2.1"
-#orbs:
-#    aws-ecr: circleci/aws-ecr@7.3.0
-#    aws-cli: circleci/aws-cli@2.0
-#jobs:
-#  configure-role-arn:
-#    executor: aws-cli/default
-#    steps:
-#        - checkout
-#        - aws-cli/setup:
-#            profile-name: default
-#        - aws-cli/role-arn-setup:
-#            profile-name: default
-#            role-arn: arn:aws:sts::695292474035:assumed-role/AWSReservedSSO_nclouds-devops_7a27a6c6e0019cb2/sachin@nclouds.com
-#            source-profile: default
-#        - run: aws sts assume-role --role-arn "arn:aws:sts::695292474035:assumed-role/AWSReservedSSO_nclouds-devops_7a27a6c6e0019cb2/sachin@nclouds.com" --role-session-name AWSCLI-Session
-#  
-#workflows:
-#    aws_cli:
-#        jobs:
-#           - configure-role-arn
-#    #build_and_push_image:
-    #    jobs:
-    #       - aws-ecr/build-and-push-image:
-    #            repo: $repo
-    #            tag: $tag
-    #            requires:
-    #               - aws-cli
-
-
-version: '2.1'
+version: "2.1"
 orbs:
-  aws-cli: circleci/aws-cli@2.0
+    aws-ecr: circleci/aws-ecr@7.3.0
+    aws-cli: circleci/aws-cli@2.0
 jobs:
   configure-role-arn:
-    executor: aws-cli/default
     steps:
-      - checkout
-      - aws-cli/setup:
-          profile-name: default
-      - aws-cli/role-arn-setup:
-          profile-name: new-profile
-          role-arn: 'arn:aws:iam::123456789012:role/example-role'
-          source-profile: default
-      - run: >-
-          aws sts assume-role --role-arn
-          "arn:aws:iam::123456789012:role/example-role" --role-session-name
-          AWSCLI-Session
+        - checkout
+        - run:
+             name: "export env var."
+             command: |
+                ASSUME_ROLE_OUTPUT=$(aws sts assume-role --role-arn arn:aws:sts::695292474035:assumed-role/AWSReservedSSO_nclouds-devops_7a27a6c6e0019cb2/sachin@nclouds.com --role-session-name jenkins)
+                ASSUME_ROLE_ENVIRONMENT=$(echo $ASSUME_ROLE_OUTPUT | jq -r '.Credentials | .["AWS_ACCESS_KEY_ID"] = .AccessKeyId | .["AWS_SECRET_ACCESS_KEY"] = .SecretAccessKey | .["AWS_SESSION_TOKEN"] = .SessionToken | del(.AccessKeyId, .SecretAccessKey, .SessionToken, .Expiration) | to_entries[] | "export \(.key)=\(.value)"')
+                eval $ASSUME_ROLE_ENVIRONMENT
+        
 workflows:
-  aws-cli:
-    jobs:
-      - configure-role-arn
+    aws_cli:
+        jobs:
+           - configure-role-arn
+    build_and_push_image:
+       jobs:
+          - aws-ecr/build-and-push-image:
+               repo: $repo
+               tag: $tag
+               requires:
+                  - aws-cli
+
