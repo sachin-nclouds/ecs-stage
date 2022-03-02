@@ -7,7 +7,6 @@ jobs:
     machine:
       image: circleci/classic:201808-01
     steps:
-        - checkouts
         - run:
              name: "export env var."
              command: |
