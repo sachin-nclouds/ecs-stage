@@ -33,14 +33,19 @@ orbs:
   aws-cli: circleci/aws-cli@2.0
 jobs:
   configure-role-arn:
-    docker:
-      - image: cimg/base:stable
+    executor: aws-cli/default
     steps:
+      - checkout
+      - aws-cli/setup:
+          profile-name: default
       - aws-cli/role-arn-setup:
-          profile-name: sachin
-          role-arn: 'arn:aws:sts::695292474035:assumed-role/AWSReservedSSO_nclouds-devops_7a27a6c6e0019cb2/sachin@nclouds.com'
+          profile-name: new-profile
+          role-arn: 'arn:aws:iam::123456789012:role/example-role'
           source-profile: default
-      - run: aws sts assume-role --role-arn "arn:aws:sts::695292474035:assumed-role/AWSReservedSSO_nclouds-devops_7a27a6c6e0019cb2/sachin@nclouds.com" --role-session-name AWSCLI-Session
+      - run: >-
+          aws sts assume-role --role-arn
+          "arn:aws:iam::123456789012:role/example-role" --role-session-name
+          AWSCLI-Session
 workflows:
   aws-cli:
     jobs:
